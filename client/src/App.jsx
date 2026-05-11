@@ -12,22 +12,42 @@ export default function App() {
 
   const bootstrap = async () => {
     setAppState('loading');
-    const cfg = await fetchConfig();
-    if (!cfg.configured) {
-      setDefaultPath(cfg.defaultPath ?? '');
-      setAppState('setup');
-      return;
+    try {
+      const cfg = await fetchConfig();
+      if (!cfg.configured) {
+        setDefaultPath(cfg.defaultPath ?? '');
+        setAppState('setup');
+        return;
+      }
+      const [cats, sessions] = await Promise.all([fetchCategories(), fetchSessions()]);
+      setCategories(cats);
+      init(cats, sessions); // pass cats directly — avoids stale closure on categories state
+      setAppState('ready');
+    } catch (err) {
+      console.error('Bootstrap failed:', err);
+      setAppState('error');
     }
-    const [cats, sessions] = await Promise.all([fetchCategories(), fetchSessions()]);
-    setCategories(cats);
-    init(sessions);
-    setAppState('ready');
   };
 
   useEffect(() => { bootstrap(); }, []);
 
   if (appState === 'loading') {
     return <div className="app-loading"><span>Loading…</span></div>;
+  }
+
+  if (appState === 'error') {
+    return (
+      <div className="app-loading">
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ color: '#ef4444', marginBottom: '1rem' }}>
+            Could not connect to the server. Is it running on port 3001?
+          </p>
+          <button onClick={bootstrap} style={{ padding: '0.5rem 1.5rem', cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (appState === 'setup') {

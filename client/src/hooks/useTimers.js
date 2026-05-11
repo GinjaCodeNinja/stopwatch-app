@@ -5,17 +5,18 @@ export function useTimers(categories) {
   const [state, setState] = useState({});
   const tickRef = useRef(null);
 
-  const init = useCallback((totals) => {
+  // Accept cats explicitly so callers don't depend on stale closed-over categories
+  const init = useCallback((cats, totals) => {
     setState(
       Object.fromEntries(
-        categories.map(c => [c.id, {
+        cats.map(c => [c.id, {
           cumulative:     totals[c.id] ?? 0,
           sessionStart:   null,
           sessionElapsed: 0,
         }])
       )
     );
-  }, [categories]);
+  }, []);
 
   useEffect(() => {
     tickRef.current = setInterval(() => {
