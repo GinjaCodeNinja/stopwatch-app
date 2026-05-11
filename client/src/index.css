@@ -1,0 +1,203 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* ── Loading ── */
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+/* ── App shell ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.app-header h1 { font-size: 1.25rem; font-weight: 700; }
+
+.settings-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.settings-btn:hover { background: #f8fafc; }
+
+/* ── Timer grid ── */
+.timer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+/* ── Timer card ── */
+.timer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1.25rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.timer-card.running {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.15);
+}
+
+.timer-source {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+}
+
+.timer-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+}
+
+.timer-cumulative {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.timer-session {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+
+.timer-card.running .timer-session { color: #2563eb; }
+
+.timer-toggle {
+  margin-top: 0.5rem;
+  padding: 0.45rem 1.25rem;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  background: #10b981;
+  color: white;
+}
+.timer-card.running .timer-toggle { background: #ef4444; }
+.timer-toggle:hover { opacity: 0.88; }
+
+/* ── Setup screen ── */
+.setup-overlay {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  padding: 1rem;
+}
+
+.setup-card {
+  background: white;
+  border-radius: 14px;
+  padding: 2.5rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.setup-card h1 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+.setup-card > p { color: #64748b; margin-bottom: 1.75rem; line-height: 1.5; }
+
+.setup-card label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.path-input-row { display: flex; gap: 0.5rem; }
+
+.path-input-row input {
+  flex: 1;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 7px;
+  font-size: 0.875rem;
+  font-family: 'Consolas', 'Courier New', monospace;
+  transition: border-color 0.15s;
+}
+.path-input-row input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.browse-btn {
+  padding: 0.6rem 1rem;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 7px;
+  background: #f8fafc;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.browse-btn:hover { background: #f1f5f9; }
+
+.setup-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.setup-submit {
+  display: block;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.75rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.setup-submit:hover:not(:disabled) { opacity: 0.9; }
+.setup-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.setup-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 1.25rem;
+  text-align: center;
+}
