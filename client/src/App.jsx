@@ -5,23 +5,23 @@ import { useTimers }     from './hooks/useTimers';
 import { fetchConfig, fetchCategories, fetchSessions } from './api';
 
 export default function App() {
-  const [appState,    setAppState]    = useState('loading'); // loading | setup | ready
-  const [defaultPath, setDefaultPath] = useState('');
-  const [categories,  setCategories]  = useState([]);
-  const { state: timerState, init, toggleTimer } = useTimers(categories);
+  const [appState,   setAppState]   = useState('loading'); // loading | setup | ready | error
+  const [vaultPath,  setVaultPath]  = useState('');
+  const [categories, setCategories] = useState([]);
+  const { state: timerState, init, toggleTimer, resetTimer } = useTimers(categories);
 
   const bootstrap = async () => {
     setAppState('loading');
     try {
       const cfg = await fetchConfig();
       if (!cfg.configured) {
-        setDefaultPath(cfg.defaultPath ?? '');
+        setVaultPath(cfg.vaultRoot ?? '');
         setAppState('setup');
         return;
       }
       const [cats, sessions] = await Promise.all([fetchCategories(), fetchSessions()]);
       setCategories(cats);
-      init(cats, sessions); // pass cats directly — avoids stale closure on categories state
+      init(cats, sessions);
       setAppState('ready');
     } catch (err) {
       console.error('Bootstrap failed:', err);
@@ -51,7 +51,7 @@ export default function App() {
   }
 
   if (appState === 'setup') {
-    return <FirstRunSetup defaultPath={defaultPath} onComplete={bootstrap} />;
+    return <FirstRunSetup currentVaultPath={vaultPath} onComplete={bootstrap} />;
   }
 
   return (
@@ -60,7 +60,7 @@ export default function App() {
         <h1>Project Timers</h1>
         <button className="settings-btn" onClick={() => setAppState('setup')}>⚙ Settings</button>
       </header>
-      <TimerGrid categories={categories} timerState={timerState} onToggle={toggleTimer} />
+      <TimerGrid categories={categories} timerState={timerState} onToggle={toggleTimer} onReset={resetTimer} />
     </div>
   );
 }

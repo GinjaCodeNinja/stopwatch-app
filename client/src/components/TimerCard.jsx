@@ -6,21 +6,35 @@ function fmt(ms) {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
 
-export function TimerCard({ category, timerState, onToggle }) {
+export function TimerCard({ category, timerState, onToggle, onReset }) {
   const { cumulative = 0, sessionStart, sessionElapsed = 0 } = timerState ?? {};
   const isRunning      = !!sessionStart;
   const totalDisplay   = fmt(cumulative + (isRunning ? sessionElapsed : 0));
   const sessionDisplay = fmt(isRunning ? sessionElapsed : 0);
 
+  const handleReset = () => {
+    if (window.confirm(`Reset "${category.label}" to 00:00:00?`)) onReset(category.id);
+  };
+
   return (
     <div className={`timer-card${isRunning ? ' running' : ''}`}>
-      <div className="timer-source">{category.source}</div>
       <h3 className="timer-label">{category.label}</h3>
-      <div className="timer-cumulative" title="Total all-time">{totalDisplay}</div>
-      <div className="timer-session"   title="This session">{sessionDisplay}</div>
-      <button className="timer-toggle" onClick={() => onToggle(category.id)}>
-        {isRunning ? '⏹ Stop' : '▶ Start'}
-      </button>
+
+      <div className="timer-cumulative">
+        <span className="timer-cumulative-label">Total</span>
+        {totalDisplay}
+      </div>
+
+      <div className="timer-session">{sessionDisplay}</div>
+
+      <div className="timer-actions">
+        <button className="timer-toggle" onClick={() => onToggle(category.id)}>
+          {isRunning ? '⏹ Stop' : '▶ Start'}
+        </button>
+        <button className="timer-reset" onClick={handleReset} title="Reset total">
+          ↺
+        </button>
+      </div>
     </div>
   );
 }

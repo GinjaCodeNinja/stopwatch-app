@@ -1,8 +1,6 @@
 const fs   = require('fs');
 const path = require('path');
 
-const HEADING_RE = /^#\s+(.+)/m;
-
 function slugify(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -10,15 +8,8 @@ function slugify(name) {
 function scanProjects(root) {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .flatMap(dir => {
-      const readmePath = path.join(root, dir.name, 'README.md');
-      if (!fs.existsSync(readmePath)) return [];
-      const content = fs.readFileSync(readmePath, 'utf8');
-      const match   = content.match(HEADING_RE);
-      const label   = match ? match[1].trim() : dir.name;
-      return [{ id: slugify(dir.name), label, source: 'readme' }];
-    });
+    .filter(d => d.isDirectory() && !d.name.includes('(PROJECT TEMPLATE)'))
+    .map(dir => ({ id: slugify(dir.name), label: dir.name, source: 'project' }));
 }
 
 const MANUAL = [

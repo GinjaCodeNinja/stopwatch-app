@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { patchSession } from '../api';
+import { patchSession, deleteSession } from '../api';
 
 export function useTimers(categories) {
   const [state, setState] = useState({});
@@ -35,36 +35,39 @@ export function useTimers(categories) {
     return () => clearInterval(tickRef.current);
   }, []);
 
-  const stopTimer = useCallback((id, prevState) => {
-    const t = prevState[id];
-    if (!t?.sessionStart) return prevState;
-    const elapsed = Date.now() - t.sessionStart;
-    patchSession(id, elapsed);
-    return {
-      ...prevState,
-      [id]: { cumulative: t.cumulative + elapsed, sessionStart: null, sessionElapsed: 0 },
-    };
-  }, []);
-
-  const startTimer = useCallback((id) => {
+  const toggleTimer = useCallback((id) => {
     setState(prev => {
+      const t = prev[id];
+      if (t?.sessionStart) {
+        // Stop this timer
+        const elapsed = Date.now() - t.sessionStart;
+        patchSession(id, elapsed);
+        return {
+          ...prev,
+          [id]: { cumulative: t.cumulative + elapsed, sessionStart: null, sessionElapsed: 0 },
+        };
+      }
+      // Start this timer — stop any other running timer first
       let next = { ...prev };
-      // Stop any running timer first (exclusive behavior)
       for (const tid in next) {
-        if (next[tid].sessionStart) next = stopTimer(tid, next);
+        if (next[tid].sessionStart) {
+          const elapsed = Date.now() - next[tid].sessionStart;
+          patchSession(tid, elapsed);
+          next[tid] = { cumulative: next[tid].cumulative + elapsed, sessionStart: null, sessionElapsed: 0 };
+        }
       }
       next[id] = { ...next[id], sessionStart: Date.now(), sessionElapsed: 0 };
       return next;
     });
-  }, [stopTimer]);
+  }, []);
 
-  const toggleTimer = useCallback((id) => {
-    setState(prev =>
-      prev[id]?.sessionStart
-        ? stopTimer(id, prev)
-        : (startTimer(id), prev)
-    );
-  }, [startTimer, stopTimer]);
+  const resetTimer = useCallback((id) => {
+    deleteSession(id);
+    setState(prev => ({
+      ...prev,
+      [id]: { cumulative: 0, sessionStart: null, sessionElapsed: 0 },
+    }));
+  }, []);
 
-  return { state, init, toggleTimer };
+  return { state, init, toggleTimer, resetTimer };
 }

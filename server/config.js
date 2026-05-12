@@ -1,16 +1,36 @@
 const fs   = require('fs');
 const path = require('path');
 
-const CONFIG_FILE  = path.join(__dirname, '../data/config.json');
-const DEFAULT_PATH = 'C:\\Users\\bsalter\\OneDrive - NCI Northern Computer Inc\\Desktop\\Re-Brenden';
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
+
+const ENV_FILE = path.join(__dirname, '../.env');
+
+function readEnvFile() {
+  if (!fs.existsSync(ENV_FILE)) return {};
+  return Object.fromEntries(
+    fs.readFileSync(ENV_FILE, 'utf8')
+      .split('\n')
+      .filter(line => line.includes('='))
+      .map(line => {
+        const idx = line.indexOf('=');
+        return [line.slice(0, idx).trim(), line.slice(idx + 1).trim()];
+      })
+  );
+}
+
+function writeEnv(updates) {
+  const current = readEnvFile();
+  const merged  = { ...current, ...updates };
+  const content = Object.entries(merged).map(([k, v]) => `${k}=${v}`).join('\n') + '\n';
+  fs.writeFileSync(ENV_FILE, content, 'utf8');
+  // Apply immediately without restart
+  for (const [k, v] of Object.entries(updates)) process.env[k] = v;
+}
 
 function loadConfig() {
-  if (fs.existsSync(CONFIG_FILE)) return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-  return { projectsRoot: null, configured: false };
+  const vaultRoot    = process.env.VAULT_ROOT    ?? null;
+  const projectsRoot = process.env.PROJECTS_ROOT ?? null;
+  return { vaultRoot, projectsRoot, configured: !!(vaultRoot && projectsRoot) };
 }
 
-function saveConfig(data) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(data, null, 2));
-}
-
-module.exports = { loadConfig, saveConfig, DEFAULT_PATH };
+module.exports = { loadConfig, writeEnv };
