@@ -3,4 +3,5 @@ client/node_modules/
 client/dist/
 data/sessions.json
 data/running.json
+# actual data now lives in {VAULT_ROOT}/.timers/ — synced via OneDrive
 .env

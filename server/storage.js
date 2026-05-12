@@ -1,19 +1,27 @@
 const fs   = require('fs');
 const path = require('path');
 
-const SESSIONS_FILE = path.join(__dirname, '../data/sessions.json');
-const RUNNING_FILE  = path.join(__dirname, '../data/running.json');
+// All data lives inside {VAULT_ROOT}/.timers/ so it syncs via OneDrive/cloud
+function getDataDir() {
+  const vault = process.env.VAULT_ROOT;
+  if (!vault) throw new Error('VAULT_ROOT not set — run setup first');
+  const dir = path.join(vault, '.timers');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+const sessionsPath = () => path.join(getDataDir(), 'sessions.json');
+const runningPath  = () => path.join(getDataDir(), 'running.json');
 
 function loadSessions() {
-  if (!fs.existsSync(SESSIONS_FILE)) return {};
-  return JSON.parse(fs.readFileSync(SESSIONS_FILE, 'utf8'));
+  const f = sessionsPath();
+  return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : {};
 }
 
 function saveSessions(data) {
-  fs.writeFileSync(SESSIONS_FILE, JSON.stringify(data, null, 2));
+  fs.writeFileSync(sessionsPath(), JSON.stringify(data, null, 2));
 }
 
-// Returns { [id]: totalMs } for client init (backward compat shape)
 function getTotals() {
   const sessions = loadSessions();
   return Object.fromEntries(
@@ -21,14 +29,13 @@ function getTotals() {
   );
 }
 
-// Adds elapsed to both total and today's date bucket
 function addElapsed(id, elapsed) {
   const sessions = loadSessions();
   if (!sessions[id]) sessions[id] = { total: 0, days: {} };
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  sessions[id].total = (sessions[id].total ?? 0) + elapsed;
-  sessions[id].days  = sessions[id].days ?? {};
-  sessions[id].days[today] = (sessions[id].days[today] ?? 0) + elapsed;
+  const today = new Date().toISOString().slice(0, 10);
+  sessions[id].total          = (sessions[id].total ?? 0) + elapsed;
+  sessions[id].days           = sessions[id].days ?? {};
+  sessions[id].days[today]    = (sessions[id].days[today] ?? 0) + elapsed;
   saveSessions(sessions);
   return sessions[id].total;
 }
@@ -39,19 +46,19 @@ function resetSession(id) {
   saveSessions(sessions);
 }
 
-// Running checkpoint — persists the active timer across restarts
 function loadRunning() {
-  if (!fs.existsSync(RUNNING_FILE)) return null;
-  try { return JSON.parse(fs.readFileSync(RUNNING_FILE, 'utf8')); }
-  catch { return null; }
+  try {
+    const f = runningPath();
+    return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null;
+  } catch { return null; }
 }
 
 function saveRunning(data) {
   if (data === null) {
-    if (fs.existsSync(RUNNING_FILE)) fs.unlinkSync(RUNNING_FILE);
+    try { fs.unlinkSync(runningPath()); } catch {}
   } else {
-    fs.writeFileSync(RUNNING_FILE, JSON.stringify(data, null, 2));
+    fs.writeFileSync(runningPath(), JSON.stringify(data, null, 2));
   }
 }
 
-module.exports = { loadSessions, getTotals, addElapsed, resetSession, loadRunning, saveRunning };
+module.exports = { loadSessions, saveSessions, getTotals, addElapsed, resetSession, loadRunning, saveRunning };
