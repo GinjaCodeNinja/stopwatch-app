@@ -1,19 +1,23 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { patchSession, deleteSession } from '../api';
+import { startSession, patchSession, deleteSession } from '../api';
 
 export function useTimers(categories) {
   const [state, setState] = useState({});
   const tickRef = useRef(null);
 
-  // Accept cats explicitly so callers don't depend on stale closed-over categories
-  const init = useCallback((cats, totals) => {
+  // running: { id, startedAt } — restored from server on page load
+  const init = useCallback((cats, totals, running) => {
     setState(
       Object.fromEntries(
-        cats.map(c => [c.id, {
-          cumulative:     totals[c.id] ?? 0,
-          sessionStart:   null,
-          sessionElapsed: 0,
-        }])
+        cats.map(c => {
+          const isRunning = running?.id === c.id;
+          const sessionStart = isRunning ? new Date(running.startedAt).getTime() : null;
+          return [c.id, {
+            cumulative:     totals[c.id] ?? 0,
+            sessionStart,
+            sessionElapsed: isRunning ? Date.now() - sessionStart : 0,
+          }];
+        })
       )
     );
   }, []);
@@ -39,7 +43,6 @@ export function useTimers(categories) {
     setState(prev => {
       const t = prev[id];
       if (t?.sessionStart) {
-        // Stop this timer
         const elapsed = Date.now() - t.sessionStart;
         patchSession(id, elapsed);
         return {
@@ -47,7 +50,7 @@ export function useTimers(categories) {
           [id]: { cumulative: t.cumulative + elapsed, sessionStart: null, sessionElapsed: 0 },
         };
       }
-      // Start this timer — stop any other running timer first
+      // Stop any other running timer first
       let next = { ...prev };
       for (const tid in next) {
         if (next[tid].sessionStart) {
@@ -56,6 +59,8 @@ export function useTimers(categories) {
           next[tid] = { cumulative: next[tid].cumulative + elapsed, sessionStart: null, sessionElapsed: 0 };
         }
       }
+      // Start this one — tell server so it can recover if we crash
+      startSession(id);
       next[id] = { ...next[id], sessionStart: Date.now(), sessionElapsed: 0 };
       return next;
     });

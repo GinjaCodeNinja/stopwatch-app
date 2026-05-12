@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { FirstRunSetup } from './components/FirstRunSetup';
 import { TimerGrid }     from './components/TimerGrid';
+import { HistoryPanel }  from './components/HistoryPanel';
 import { useTimers }     from './hooks/useTimers';
-import { fetchConfig, fetchCategories, fetchSessions } from './api';
+import { fetchConfig, fetchCategories, fetchSessions, fetchRunning } from './api';
 
 export default function App() {
-  const [appState,   setAppState]   = useState('loading'); // loading | setup | ready | error
-  const [vaultPath,  setVaultPath]  = useState('');
-  const [categories, setCategories] = useState([]);
+  const [appState,    setAppState]    = useState('loading');
+  const [vaultPath,   setVaultPath]   = useState('');
+  const [categories,  setCategories]  = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
   const { state: timerState, init, toggleTimer, resetTimer } = useTimers(categories);
 
   const bootstrap = async () => {
@@ -19,9 +21,13 @@ export default function App() {
         setAppState('setup');
         return;
       }
-      const [cats, sessions] = await Promise.all([fetchCategories(), fetchSessions()]);
+      const [cats, sessions, running] = await Promise.all([
+        fetchCategories(),
+        fetchSessions(),
+        fetchRunning(),
+      ]);
       setCategories(cats);
-      init(cats, sessions);
+      init(cats, sessions, running);
       setAppState('ready');
     } catch (err) {
       console.error('Bootstrap failed:', err);
@@ -58,9 +64,13 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1>Project Timers</h1>
-        <button className="settings-btn" onClick={() => setAppState('setup')}>⚙ Settings</button>
+        <div className="header-actions">
+          <button className="history-btn" onClick={() => setShowHistory(true)}>📊 History</button>
+          <button className="settings-btn" onClick={() => setAppState('setup')}>⚙ Settings</button>
+        </div>
       </header>
       <TimerGrid categories={categories} timerState={timerState} onToggle={toggleTimer} onReset={resetTimer} />
+      {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
     </div>
   );
 }
